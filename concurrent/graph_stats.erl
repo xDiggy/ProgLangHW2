@@ -58,19 +58,9 @@ doPartByLine(File) ->
     fwrite("Edges: ~w\n", [Edges]).
 
 
-
-doPartByAllDriver(FilePath) ->
-    {ok, Dump} = read(FilePath, 1024*1024),
-    fwrite("Demp: ~p\n", [Dump]),
-    Info = tokens(Dump, "\n"),
-    fwrite("Info: ~p\n", [Info]),
-    PartMap = #{"default" => none},
-    doPartByAll(Info, PartMap).
-
-
-doPartByAll(Data, PartMap) ->
+doPartByAll(Data, GodMap) ->
     case Data of
-        [] -> ok;
+        [] -> GodMap;
         [IDX, NODESX, COLORSX, EDGESX|T] ->
             PartitionIDString = IDX,
             {PartitionID, _} = string:to_integer(sub_string(PartitionIDString, 11, len(PartitionIDString))),
@@ -85,11 +75,33 @@ doPartByAll(Data, PartMap) ->
             fwrite("Colors: ~p\n", [Colors]),
             fwrite("Edges: ~w\n", [Edges]),
             EdgeList = createListOfEdges(Edges, []),
+            EdgesFromMap = maps:get("AllEdges", GodMap),
+            LMAO = addAll(EdgesFromMap, EdgeList),
+            NewMap = maps:put("AllEdges", [LMAO], GodMap),
             fwrite("EdgeList: ~w\n", [EdgeList]),
             NodeList = createListOfNodes(Nodes, [], lists:reverse(Colors)),
+            NodeListFromMap = maps:get("AllNodes", NewMap),
+            LOL = addAll(NodeListFromMap, NodeList),
+            NewNewMap = maps:put("AllNodes", [LOL], NewMap),
             fwrite("NodeList: ~p\n", [NodeList]),
-            doPartByAll(T, PartMap)
+            fwrite("LMAO: ~p\n", [LMAO]),
+            fwrite("LOL: ~p\n", [LOL]),
+
+            doPartByAll(T, NewNewMap)
+
     end.
+
+
+doPartByAllDriver(FilePath) ->
+    {ok, Dump} = read(FilePath, 1024*1024),
+    fwrite("Dump: ~p\n", [Dump]),
+    Info = tokens(Dump, "\n"),
+    fwrite("Info: ~p\n", [Info]),
+    GodMap = #{"AllNodes" => [], "AllEdges" => [], "AllColors" => sets:new(), "AllPartitions" => []},
+    SOME = doPartByAll(Info, GodMap),
+    fwrite("--------- AFTER PARSE ---------\n"),
+    fwrite("Some: ~p\n", [SOME]).
+
 
 createListOfEdges(Input, Edges) ->
     case Input of
@@ -107,6 +119,24 @@ createListOfNodes(Input, Nodes, Colors) ->
             NewNode = #node{id=H, color=lists:last(Colors), edges=[]},
             NewList = [NewNode|Nodes],
             createListOfNodes(T, NewList, lists:droplast(Colors))
+    end.
+
+edgesMatchingFrom(NodeID, Edges) ->
+    case Edges of
+        [] -> [];
+        [H|T] ->
+            case H#edge.from == NodeID of
+                true -> [H|edgesMatchingFrom(NodeID, T)];
+                false -> edgesMatchingFrom(NodeID, T)
+            end
+    end.
+
+addAll(List1, List2) ->
+    case List1 of
+        [] -> List2;
+        [H|T] ->
+            NewList = lists:merge([List2, H]),
+            addAll(T, NewList)
     end.
 
 parse_partitions(Input_file_path) ->
