@@ -1,7 +1,9 @@
+% c("graph_stats"), graph_stats:start("../input.txt", "a_output.txt", "b_output.txt").
+
 -module(graph_stats).
 
 -import(io, [get_line/2]).      % for line from file
--import(file, [read_file/1]).     % for reading all from file
+-import(file, [read_file/1]).   % for reading all from file
 -import(file, [read/2]).        % for reading all from file
 -import(io, [fwrite/1]).        % for printing
 -import(io, [fwrite/2]).        % for printing
@@ -51,25 +53,24 @@ doPartByLine(File) ->
     Edges = edgesListStringToListInt(tokens(EdgesTemp, " ")),
 
     fwrite("Partition ID: ~p\n", [PartitionID]),
-    fwrite("Nodes: ~p\n", [Nodes]),
+    fwrite("Nodes: ~w\n", [Nodes]),
     fwrite("Colors: ~p\n", [Colors]),
-    fwrite("Edges: ~p\n", [Edges]).
+    fwrite("Edges: ~w\n", [Edges]).
 
 
-% these shit top 5 bitches of all time
-% why tf [8, 9, 10, 11] -> "\b\t\n\v"
-% ??
+
 doPartByAllDriver(FilePath) ->
     {ok, Dump} = read(FilePath, 1024*1024),
     fwrite("Demp: ~p\n", [Dump]),
     Info = tokens(Dump, "\n"),
     fwrite("Info: ~p\n", [Info]),
-    doPartByAll(Info).
+    PartMap = #{"default" => none},
+    doPartByAll(Info, PartMap).
 
 
-doPartByAll(Data) ->
+doPartByAll(Data, PartMap) ->
     case Data of
-        [] -> [];
+        [] -> ok;
         [IDX, NODESX, COLORSX, EDGESX|T] ->
             PartitionIDString = IDX,
             {PartitionID, _} = string:to_integer(sub_string(PartitionIDString, 11, len(PartitionIDString))),
@@ -80,17 +81,38 @@ doPartByAll(Data) ->
             Edges = edgesListStringToListInt(tokens(EdgesTemp, " ")),
 
             fwrite("Partition ID: ~p\n", [PartitionID]),
-            fwrite("Nodes: ~p\n", [Nodes]),
+            fwrite("Nodes: ~w\n", [Nodes]),
             fwrite("Colors: ~p\n", [Colors]),
-            fwrite("Edges: ~p\n", [Edges]),
-            doPartByAll(T)
+            fwrite("Edges: ~w\n", [Edges]),
+            EdgeList = createListOfEdges(Edges, []),
+            fwrite("EdgeList: ~w\n", [EdgeList]),
+            NodeList = createListOfNodes(Nodes, [], lists:reverse(Colors)),
+            fwrite("NodeList: ~p\n", [NodeList]),
+            doPartByAll(T, PartMap)
     end.
 
+createListOfEdges(Input, Edges) ->
+    case Input of
+        [] -> Edges;
+        [[H|T]|O] ->
+            NewEdge = #edge{from=H, to=nth(1, T)},
+            NewList = [NewEdge|Edges],
+            createListOfEdges(O, NewList)
+    end.
+
+createListOfNodes(Input, Nodes, Colors) ->
+    case Input of
+        [] -> Nodes;
+        [H|T] ->
+            NewNode = #node{id=H, color=lists:last(Colors), edges=[]},
+            NewList = [NewNode|Nodes],
+            createListOfNodes(T, NewList, lists:droplast(Colors))
+    end.
 
 parse_partitions(Input_file_path) ->
     {ok, File} = file:open(Input_file_path, [read]),
-    doPartByLine(File).
-    % doPartByAllDriver(File).
+    % doPartByLine(File).
+    doPartByAllDriver(File).
 
 start(Input_file_path, Part_a_output_file_path, Part_b_output_file_path) ->
     % code starts here
