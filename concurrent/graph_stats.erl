@@ -87,20 +87,102 @@ doPartByAll(Data, GodMap) ->
             fwrite("LMAO: ~p\n", [LMAO]),
             fwrite("LOL: ~p\n", [LOL]),
 
-            doPartByAll(T, NewNewMap)
+            ExistingColors = maps:get("AllColors", NewNewMap),
+            NewColors = addAllColors(Colors, ExistingColors),
+            NewNewNewMap = maps:put("AllColors", NewColors, NewNewMap),
+            fwrite("NewColors: ~p\n", [NewColors]),
+
+            doPartByAll(T, NewNewNewMap)
 
     end.
 
+addColors(Existing, Colors) ->
+    case Colors of
+        [] -> Existing;
+        [H|T] ->
+            ColorAtom = list_to_atom(H),
+            case lists:member(ColorAtom, Existing) of
+                true -> addColors(Existing, T);
+                false ->
+                    fwrite("Adding color: ~p\n", [ColorAtom]),
+                    fwrite("Existing: ~p\n", [Existing]),
+                    Temp = addAll([ColorAtom], Existing),
+                    fwrite("Temp: ~p\n", [Temp]),
+                    addColors(Temp, T)
+                % false -> addColors(lists:merge([H, Existing]), T)
+            end
+    end.
+
+addAllColors(List1, List2) ->
+    case List1 of
+        [] -> List2;
+        [H|T] ->
+            CA = list_to_atom(H),
+            case lists:member(CA, List2) of
+                true -> addAllColors(T, List2);
+                false ->
+                    fwrite("Adding color: ~p\n", [CA]),
+                    fwrite("Existing: ~p\n", [List2]),
+                    NewList = List2 ++ [CA],
+                    fwrite("NewList: ~p\n", [NewList]),
+                    addAllColors(T, NewList)
+            end
+    end.
+
+addEdgesIntoNodes(GodMap) ->
+    % XNodes = nth(1, maps:get("AllNodes", GodMap)),
+    % LastNode = lists:last(XNodes),
+    % YNodes = lists:droplast(XNodes),
+    % fwrite("YNodes: ~p\n", [YNodes]),
+    % fwrite("LastNode: ~p\n", [LastNode]).
+    fwrite("nah gang u got other shit to worry abt\n").
+
+removeMirroredEdges(Edges) ->
+    % fwrite("**~p**\n", [nth(1,Edges)]),
+    UniqueEdges = putUnique(nth(1,Edges), []).
+
+putUnique(Edges, NewList) ->
+    case Edges of
+        [] -> NewList;
+        [H|T] -> 
+            X = H,
+            NewEdges = T,
+            Res = edgeInList(X, NewList),
+            case Res of
+                false -> putUnique(NewEdges, lists:merge([NewList, [X]]));
+                true -> putUnique(NewEdges, NewList)
+            end
+    end.
+
+edgeInList(Edge, List) ->
+    case List of
+        [] -> false;
+        [H|T] ->
+            Froms = Edge#edge.from == H#edge.from,
+            Tos = Edge#edge.to == H#edge.to,
+            NormalEqual = Froms and Tos,
+            FromTo = Edge#edge.from == H#edge.to,
+            ToFrom = Edge#edge.to == H#edge.from,
+            FlippedEqual = FromTo and ToFrom,
+
+            case (NormalEqual or FlippedEqual) of
+                false -> edgeInList(Edge, T);
+                true -> true
+            end            
+    end.
 
 doPartByAllDriver(FilePath) ->
     {ok, Dump} = read(FilePath, 1024*1024),
     fwrite("Dump: ~p\n", [Dump]),
     Info = tokens(Dump, "\n"),
     fwrite("Info: ~p\n", [Info]),
-    GodMap = #{"AllNodes" => [], "AllEdges" => [], "AllColors" => sets:new(), "AllPartitions" => []},
+    GodMap = #{"AllNodes" => [], "AllEdges" => [], "AllColors" => [], "AllPartitions" => []},
     SOME = doPartByAll(Info, GodMap),
     fwrite("--------- AFTER PARSE ---------\n"),
-    fwrite("Some: ~p\n", [SOME]).
+    fwrite("Some: ~p\n", [SOME]),
+    fwrite("--------- DOING NODE TINGS ---------\n"),
+    removeMirroredEdges(maps:get("AllEdges", SOME)),
+    addEdgesIntoNodes(SOME).
 
 
 createListOfEdges(Input, Edges) ->
@@ -116,7 +198,7 @@ createListOfNodes(Input, Nodes, Colors) ->
     case Input of
         [] -> Nodes;
         [H|T] ->
-            NewNode = #node{id=H, color=lists:last(Colors), edges=[]},
+            NewNode = #node{id=H, color=list_to_atom(lists:last(Colors)), edges=[]},
             NewList = [NewNode|Nodes],
             createListOfNodes(T, NewList, lists:droplast(Colors))
     end.
