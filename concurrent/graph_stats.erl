@@ -186,6 +186,42 @@ edgeInList(Edge, List) ->
             end            
     end.
 
+countEdgesOfColor(Colors, Nodes) ->
+    case Colors of
+        [] -> ok;
+        [H|T] ->
+            fwrite("~p, ", [H]),
+            fwrite("~p, ", [idekWhatToNameThisButNodes(H, Nodes)]),
+            fwrite("~p\n", [idekWhatToNameThisButEdges(H, Nodes)]),
+            countEdgesOfColor(T, Nodes)
+    end.
+
+idekWhatToNameThisButEdges(Color, Nodes) ->
+    case Nodes of
+        [] -> 0;
+        [H|T] ->
+            case H#node.color == Color of
+                true -> lengthOf(H#node.edges) + idekWhatToNameThisButEdges(Color, T);
+                false -> idekWhatToNameThisButEdges(Color, T)
+            end
+    end.
+
+idekWhatToNameThisButNodes(Color, Nodes) ->
+    case Nodes of
+        [] -> 0;
+        [H|T] ->
+            case H#node.color == Color of
+                true -> 1 + idekWhatToNameThisButNodes(Color, T);
+                false -> idekWhatToNameThisButNodes(Color, T)
+            end
+    end.
+
+lengthOf(List) ->
+    case List of
+        [] -> 0;
+        [H|T] -> 1 + lengthOf(T)
+    end.
+
 doPartByAllDriver(FilePath) ->
     {ok, Dump} = read(FilePath, 1024*1024),
     fwrite("Dump: ~p\n", [Dump]),
@@ -200,7 +236,13 @@ doPartByAllDriver(FilePath) ->
     AnotherMap = maps:put("AllEdges", Temp, SOME),
     DumbassMap = addEdgesIntoNodes(AnotherMap),
     fwrite("Unique Edges: ~p\n", [Temp]),
-    fwrite("GodMap: ~p\n", [DumbassMap]).
+    fwrite("DumbassMap: ~p\n", [DumbassMap]),
+    fwrite("--------- COLORS RAHHHH ---------\n"),
+    AllColors = maps:get("AllColors", DumbassMap),
+    AllNodes = maps:get("AllNodes", DumbassMap),
+    countEdgesOfColor(AllColors, AllNodes).
+
+
 
 
 createListOfEdges(Input, Edges) ->
