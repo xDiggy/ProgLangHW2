@@ -135,11 +135,26 @@ addEdgesIntoNodes(GodMap) ->
     % YNodes = lists:droplast(XNodes),
     % fwrite("YNodes: ~p\n", [YNodes]),
     % fwrite("LastNode: ~p\n", [LastNode]).
-    fwrite("nah gang u got other shit to worry abt\n").
+    AllNodes = nth(1, maps:get("AllNodes", GodMap)),
+    AlLEdges = maps:get("AllEdges", GodMap),
+    NewNodeList = goOverNodes(AllNodes, AlLEdges, []),
+    NewGodMap = maps:put("AllNodes", NewNodeList, GodMap),
+    fwrite("nah gang u got other shit to worry abt\n"),
+    NewGodMap.
+
+goOverNodes(Nodes, Edges, NewNodeList) ->
+    case Nodes of
+        [] -> NewNodeList;
+        [H|T] ->
+            NodeEdges = edgesMatchingFrom(H#node.id, Edges),
+            NewNode = #node{id=H#node.id, color=H#node.color, edges=NodeEdges},
+            goOverNodes(T, Edges, NewNodeList ++ [NewNode])
+    end.
 
 removeMirroredEdges(Edges) ->
     % fwrite("**~p**\n", [nth(1,Edges)]),
-    UniqueEdges = putUnique(nth(1,Edges), []).
+    UniqueEdges = putUnique(nth(1,Edges), []),
+    UniqueEdges.
 
 putUnique(Edges, NewList) ->
     case Edges of
@@ -181,8 +196,11 @@ doPartByAllDriver(FilePath) ->
     fwrite("--------- AFTER PARSE ---------\n"),
     fwrite("Some: ~p\n", [SOME]),
     fwrite("--------- DOING NODE TINGS ---------\n"),
-    removeMirroredEdges(maps:get("AllEdges", SOME)),
-    addEdgesIntoNodes(SOME).
+    Temp = removeMirroredEdges(maps:get("AllEdges", SOME)),
+    AnotherMap = maps:put("AllEdges", Temp, SOME),
+    DumbassMap = addEdgesIntoNodes(AnotherMap),
+    fwrite("Unique Edges: ~p\n", [Temp]),
+    fwrite("GodMap: ~p\n", [DumbassMap]).
 
 
 createListOfEdges(Input, Edges) ->
@@ -207,7 +225,9 @@ edgesMatchingFrom(NodeID, Edges) ->
     case Edges of
         [] -> [];
         [H|T] ->
-            case H#edge.from == NodeID of
+            Flag1 = H#edge.from == NodeID,
+            Flag2 = H#edge.to == NodeID,
+            case Flag1 or Flag2 of
                 true -> [H|edgesMatchingFrom(NodeID, T)];
                 false -> edgesMatchingFrom(NodeID, T)
             end
