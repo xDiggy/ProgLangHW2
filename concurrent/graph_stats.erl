@@ -186,14 +186,20 @@ edgeInList(Edge, List) ->
             end            
     end.
 
-countEdgesOfColor(Colors, Nodes) ->
+countEdgesOfColor(Colors, Nodes, File) ->
     case Colors of
         [] -> ok;
         [H|T] ->
             fwrite("~p, ", [H]),
             fwrite("~p, ", [idekWhatToNameThisButNodes(H, Nodes)]),
             fwrite("~p\n", [idekWhatToNameThisButEdges(H, Nodes)]),
-            countEdgesOfColor(T, Nodes)
+            io:format(File, "~p, ", [H]),
+            io:format(File, "~p, ", [idekWhatToNameThisButNodes(H, Nodes)]),
+            case T of
+                [] -> io:format(File, "~p", [idekWhatToNameThisButEdges(H, Nodes)]);
+                _ -> io:format(File, "~p\n", [idekWhatToNameThisButEdges(H, Nodes)])
+            end,
+            countEdgesOfColor(T, Nodes, File)
     end.
 
 idekWhatToNameThisButEdges(Color, Nodes) ->
@@ -222,7 +228,7 @@ lengthOf(List) ->
         [H|T] -> 1 + lengthOf(T)
     end.
 
-doPartByAllDriver(FilePath) ->
+doPartByAllDriver(FilePath, A_out_file, B_out_file) ->
     {ok, Dump} = read(FilePath, 1024*1024),
     fwrite("Dump: ~p\n", [Dump]),
     Info = tokens(Dump, "\n"),
@@ -240,7 +246,12 @@ doPartByAllDriver(FilePath) ->
     fwrite("--------- COLORS RAHHHH ---------\n"),
     AllColors = maps:get("AllColors", DumbassMap),
     AllNodes = maps:get("AllNodes", DumbassMap),
-    countEdgesOfColor(AllColors, AllNodes).
+
+    fwrite("--------- DONE ---------\n"),
+    fwrite("--------- TESTING ---------\n"),
+
+    {ok, A} = file:open(A_out_file, [write]),
+    countEdgesOfColor(AllColors, AllNodes, A).
 
 
 
@@ -283,13 +294,13 @@ addAll(List1, List2) ->
             addAll(T, NewList)
     end.
 
-parse_partitions(Input_file_path) ->
+parse_partitions(Input_file_path, A_out, B_out) ->
     {ok, File} = file:open(Input_file_path, [read]),
     % doPartByLine(File).
-    doPartByAllDriver(File).
+    doPartByAllDriver(File, A_out, B_out).
 
 start(Input_file_path, Part_a_output_file_path, Part_b_output_file_path) ->
     % code starts here
     fwrite("Starting Program graph_stats\n"),
     fwrite("---------------------\n"),
-    parse_partitions(Input_file_path).
+    parse_partitions(Input_file_path, Part_a_output_file_path, Part_b_output_file_path).
