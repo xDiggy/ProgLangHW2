@@ -43,14 +43,14 @@ edgesListStringToListInt(Edges) ->
     end.
 
 % parse inputs into correct data types
-doPartByLine(File) ->
-    PartitionIDString = strip(get_line(File, ''), right, $\n),
-    {PartitionID, _} = string:to_integer(sub_string(PartitionIDString, 11, len(PartitionIDString))),
-    NodesTemp = strip(io:get_line(File, ''), right, $\n),
-    Nodes = nodesListStringToListInt(tokens(NodesTemp, ",")),
-    Colors = tokens(strip(io:get_line(File, ''), right, $\n), ","),
-    EdgesTemp = strip(io:get_line(File, ''), right, $\n),
-    Edges = edgesListStringToListInt(tokens(EdgesTemp, " ")).
+% doPartByLine(File) ->
+%     PartitionIDString = strip(get_line(File, ''), right, $\n),
+%     {PartitionID, _} = string:to_integer(sub_string(PartitionIDString, 11, len(PartitionIDString))),
+%     NodesTemp = strip(io:get_line(File, ''), right, $\n),
+%     Nodes = nodesListStringToListInt(tokens(NodesTemp, ",")),
+%     Colors = tokens(strip(io:get_line(File, ''), right, $\n), ","),
+%     EdgesTemp = strip(io:get_line(File, ''), right, $\n),
+%     Edges = edgesListStringToListInt(tokens(EdgesTemp, " ")).
 
     % fwrite("Partition ID: ~p\n", [PartitionID]),
     % fwrite("Nodes: ~w\n", [Nodes]),
@@ -102,22 +102,22 @@ doPartByAll(Data, GodMap) ->
 
     end.
 
-addColors(Existing, Colors) ->
-    case Colors of
-        [] -> Existing;
-        [H|T] ->
-            ColorAtom = list_to_atom(H),
-            case lists:member(ColorAtom, Existing) of
-                true -> addColors(Existing, T);
-                false ->
-                    % fwrite("Adding color: ~p\n", [ColorAtom]),
-                    % fwrite("Existing: ~p\n", [Existing]),
-                    Temp = addAll([ColorAtom], Existing),
-                    % fwrite("Temp: ~p\n", [Temp]),
-                    addColors(Temp, T)
-                % false -> addColors(lists:merge([H, Existing]), T)
-            end
-    end.
+% addColors(Existing, Colors) ->
+%     case Colors of
+%         [] -> Existing;
+%         [H|T] ->
+%             ColorAtom = list_to_atom(H),
+%             case lists:member(ColorAtom, Existing) of
+%                 true -> addColors(Existing, T);
+%                 false ->
+%                     % fwrite("Adding color: ~p\n", [ColorAtom]),
+%                     % fwrite("Existing: ~p\n", [Existing]),
+%                     Temp = addAll([ColorAtom], Existing),
+%                     % fwrite("Temp: ~p\n", [Temp]),
+%                     addColors(Temp, T)
+%                 % false -> addColors(lists:merge([H, Existing]), T)
+%             end
+%     end.
 
 addAllColors(List1, List2) ->
     case List1 of
@@ -231,7 +231,7 @@ idekWhatToNameThisButNodes(Color, Nodes) ->
 lengthOf(List) ->
     case List of
         [] -> 0;
-        [H|T] -> 1 + lengthOf(T)
+        [_|T] -> 1 + lengthOf(T)
     end.
 
 doPartByAllDriver(FilePath, A_out_file, B_out_file) ->
@@ -260,7 +260,7 @@ doPartByAllDriver(FilePath, A_out_file, B_out_file) ->
     countEdgesOfColor(AllColors, AllNodes, A),
 
     BetterMap = makePartitionsUseful(DumbassMap),
-    fwrite("---------- DO PART B ----------\n"),
+    % fwrite("---------- DO PART B ----------\n"),
     {ok, B} = file:open(B_out_file, [write]),
     startPartB(BetterMap, B).
 
