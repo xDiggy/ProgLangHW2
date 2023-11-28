@@ -42,22 +42,6 @@ edgesListStringToListInt(Edges) ->
             [[Int1, Int2] | edgesListStringToListInt(T)]
     end.
 
-% parse inputs into correct data types
-% doPartByLine(File) ->
-%     PartitionIDString = strip(get_line(File, ''), right, $\n),
-%     {PartitionID, _} = string:to_integer(sub_string(PartitionIDString, 11, len(PartitionIDString))),
-%     NodesTemp = strip(io:get_line(File, ''), right, $\n),
-%     Nodes = nodesListStringToListInt(tokens(NodesTemp, ",")),
-%     Colors = tokens(strip(io:get_line(File, ''), right, $\n), ","),
-%     EdgesTemp = strip(io:get_line(File, ''), right, $\n),
-%     Edges = edgesListStringToListInt(tokens(EdgesTemp, " ")).
-
-    % fwrite("Partition ID: ~p\n", [PartitionID]),
-    % fwrite("Nodes: ~w\n", [Nodes]),
-    % fwrite("Colors: ~p\n", [Colors]),
-    % fwrite("Edges: ~w\n", [Edges]).
-
-
 doPartByAll(Data, GodMap) ->
     case Data of
         [] -> GodMap;
@@ -102,23 +86,6 @@ doPartByAll(Data, GodMap) ->
 
     end.
 
-% addColors(Existing, Colors) ->
-%     case Colors of
-%         [] -> Existing;
-%         [H|T] ->
-%             ColorAtom = list_to_atom(H),
-%             case lists:member(ColorAtom, Existing) of
-%                 true -> addColors(Existing, T);
-%                 false ->
-%                     % fwrite("Adding color: ~p\n", [ColorAtom]),
-%                     % fwrite("Existing: ~p\n", [Existing]),
-%                     Temp = addAll([ColorAtom], Existing),
-%                     % fwrite("Temp: ~p\n", [Temp]),
-%                     addColors(Temp, T)
-%                 % false -> addColors(lists:merge([H, Existing]), T)
-%             end
-%     end.
-
 addAllColors(List1, List2) ->
     case List1 of
         [] -> List2;
@@ -127,25 +94,16 @@ addAllColors(List1, List2) ->
             case lists:member(CA, List2) of
                 true -> addAllColors(T, List2);
                 false ->
-                    % fwrite("Adding color: ~p\n", [CA]),
-                    % fwrite("Existing: ~p\n", [List2]),
                     NewList = List2 ++ [CA],
-                    % fwrite("NewList: ~p\n", [NewList]),
                     addAllColors(T, NewList)
             end
     end.
 
 addEdgesIntoNodes(GodMap) ->
-    % XNodes = nth(1, maps:get("AllNodes", GodMap)),
-    % LastNode = lists:last(XNodes),
-    % YNodes = lists:droplast(XNodes),
-    % fwrite("YNodes: ~p\n", [YNodes]),
-    % fwrite("LastNode: ~p\n", [LastNode]).
     AllNodes = nth(1, maps:get("AllNodes", GodMap)),
     AlLEdges = maps:get("AllEdges", GodMap),
     NewNodeList = goOverNodes(AllNodes, AlLEdges, []),
     NewGodMap = maps:put("AllNodes", NewNodeList, GodMap),
-    % fwrite("nah gang u got other shit to worry abt\n"),
     NewGodMap.
 
 goOverNodes(Nodes, Edges, NewNodeList) ->
@@ -158,7 +116,6 @@ goOverNodes(Nodes, Edges, NewNodeList) ->
     end.
 
 removeMirroredEdges(Edges) ->
-    % fwrite("**~p**\n", [nth(1,Edges)]),
     UniqueEdges = putUnique(nth(1,Edges), []),
     UniqueEdges.
 
@@ -196,9 +153,6 @@ countEdgesOfColor(Colors, Nodes, File) ->
     case Colors of
         [] -> ok;
         [H|T] ->
-            % fwrite("~p, ", [H]),
-            % fwrite("~p, ", [idekWhatToNameThisButNodes(H, Nodes)]),
-            % fwrite("~p\n", [idekWhatToNameThisButEdges(H, Nodes)]),
             io:format(File, "~p, ", [H]),
             io:format(File, "~p, ", [idekWhatToNameThisButNodes(H, Nodes)]),
             case T of
@@ -236,44 +190,29 @@ lengthOf(List) ->
 
 doPartByAllDriver(FilePath, A_out_file, B_out_file) ->
     {ok, Dump} = read(FilePath, 1024*1024),
-    % fwrite("Dump: ~p\n", [Dump]),
     Info = tokens(Dump, "\n"),
-    % fwrite("Info: ~p\n", [Info]),
     GodMap = #{"AllNodes" => [], "AllEdges" => [], "AllColors" => [], "AllPartitions" => []},
     SOME = doPartByAll(Info, GodMap),
-    % fwrite("--------- AFTER PARSE ---------\n"),
-    % fwrite("Some: ~p\n", [SOME]),
-    % fwrite("--------- DOING NODE TINGS ---------\n"),
     Temp = removeMirroredEdges(maps:get("AllEdges", SOME)),
     AnotherMap = maps:put("AllEdges", Temp, SOME),
     DumbassMap = addEdgesIntoNodes(AnotherMap),
-    % fwrite("Unique Edges: ~p\n", [Temp]),
-    % fwrite("DumbassMap: ~p\n", [DumbassMap]),
-    % fwrite("--------- COLORS RAHHHH ---------\n"),
     AllColors = maps:get("AllColors", DumbassMap),
     AllNodes = maps:get("AllNodes", DumbassMap),
-
-    % fwrite("--------- DONE ---------\n"),
-    % fwrite("--------- TESTING ---------\n"),
 
     {ok, A} = file:open(A_out_file, [write]),
     countEdgesOfColor(AllColors, AllNodes, A),
 
     BetterMap = makePartitionsUseful(DumbassMap),
-    % fwrite("---------- DO PART B ----------\n"),
     {ok, B} = file:open(B_out_file, [write]),
     startPartB(BetterMap, B).
 
 startPartB(Map, B_out_file) -> 
     AllNodes = maps:get("AllNodes", Map),
     AllPartitions = maps:get("AllPartitions", Map),
-    % fwrite("AllPartitions: ~p\n", [AllPartitions]),
     End = findShitFromPartition(lists:reverse(AllPartitions), AllNodes, B_out_file),
     End2 = lists:sort(findUID(End)),
-    % fwrite("End: "),
     io:format(B_out_file, "G: ", []),
     printNodes(End2, B_out_file).
-    % fwrite("\n").
 
 findShitFromPartition(Parts, AllNodes, B_out_file) -> 
     case Parts of
@@ -281,19 +220,13 @@ findShitFromPartition(Parts, AllNodes, B_out_file) ->
         [H|T] ->
             X = findAllEdgesInPartition(H#partition.nodes),
             AllEdgesInPart = removeMirroredEdges([X]),
-            % fwrite("AllEdgesInPart: ~p\n", [AllEdgesInPart]),
             AllNodesFromAllEdges = findAllNodesFromEdges(AllEdgesInPart, AllNodes),
             UNodes = uniqueNodes(AllNodesFromAllEdges),
-            % fwrite("AllNodesFromAllEdges: ~p\n", [UNodes]),
             AllNodeDegrees = degreeOfNodes(UNodes, []),
-            % fwrite("AllNodeDegrees: ~p\n", [AllNodeDegrees]),
             MaxDegree = findMaxdegree(AllNodeDegrees),
-            % fwrite("MaxDegree: ~p\n", [MaxDegree]),
             EdgesWithMaxDegree = edgesWithMaxDegree(MaxDegree, AllNodeDegrees),
-            % fwrite("partition ~p: ", [H#partition.id]),
             io:format(B_out_file, "partition ~p: ", [H#partition.id]),
             printNodes(lists:sort(EdgesWithMaxDegree), B_out_file),
-            % fwrite("\n"),
             io:format(B_out_file, "\n", []),
             EdgesWithMaxDegree ++ findShitFromPartition(T, AllNodes, B_out_file)
     end.
@@ -312,12 +245,10 @@ printNodes(Nodes, B_out_file) ->
     case Nodes of
         [] -> ok;
         [H|T] ->
-            % fwrite("~p", [H]),
             io:format(B_out_file, "~p", [H]),
             case T of
                 [] -> ok;
                 _ -> io:format(B_out_file, ",", [])
-                % _ -> fwrite(",")
             end,
             printNodes(T, B_out_file)
     end.
@@ -438,7 +369,6 @@ addAll(List1, List2) ->
 
 parse_partitions(Input_file_path, A_out, B_out) ->
     {ok, File} = file:open(Input_file_path, [read]),
-    % doPartByLine(File).
     doPartByAllDriver(File, A_out, B_out).
 
 makePartitionsUseful(GodMap) ->
@@ -480,7 +410,4 @@ idToNode(Id, AllNodes) ->
 
 
 start(Input_file_path, Part_a_output_file_path, Part_b_output_file_path) ->
-    % code starts here
-    % fwrite("Starting Program graph_stats\n"),
-    % fwrite("---------------------\n"),
     parse_partitions(Input_file_path, Part_a_output_file_path, Part_b_output_file_path).
